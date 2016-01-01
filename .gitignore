@@ -1,0 +1,10 @@
+.httr-oauth
+.Rproj
+.Rproj.user
+*.RData
+*.txt
+*.png
+pdfs-output/*
+plots-output/*
+*.sqlite
+twusers
