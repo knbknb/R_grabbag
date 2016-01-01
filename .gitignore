@@ -6,5 +6,4 @@
 *.png
 pdfs-output/*
 plots-output/*
-*.sqlite
 twusers
