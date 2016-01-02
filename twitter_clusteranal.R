@@ -35,7 +35,7 @@ ratelimits()
 #
 is_stored <- FALSE
 days_back <- 10
-date_back <- format(now() - days(days_back), "%Y%m%d")
+date_back <- format(now() - days(days_back), "%Y-%m-%d")
 #query <- paste0("#potsdam -#nowplaying -RT since:" , date_back)
 query <- paste0("#tatort -RT since:" , date_back)
 query.name <- "qry_tatort"
@@ -94,33 +94,26 @@ myCorpus.URLs.removed <- tm_map(myCorpus.URLs.removed, content_transformer(tolow
 
 # first 3 words become 'heading' metadata entity
 myCorpus.URLs.removed <- tm_map(myCorpus.URLs.removed, setHeading)
-
 # 'id' metadata entity becomes 'description' plus 'screenName' - easier for DTMs
 tryCatch({myCorpus.URLs.removed <- tm_map(myCorpus.URLs.removed, setId)}, error=function(e){warning(e); return("cannot set heading:")})
-
-
-
+# add a humanreadable datestring
 myCorpus.URLs.removed <- tm_map(myCorpus.URLs.removed, setDatestr)
-
-
 
 # again, show a few
 sapply(randn, function(i) {meta(myCorpus.URLs.removed[[i]])})
 tryCatch({sapply(randn, function(i) {content(myCorpus.URLs.removed[[i]])})}, error=function(e){warning(e); return("cannot show content:")})
-
-
 sapply(randn, function(i) {tm::termFreq(myCorpus.URLs.removed[[i]])})
 
 
 
 myStopwords <- c(stopwords("english"), stopwords("german"), "rt", "@", "-", "via")
-
-# Create a wordcloud, Doc-term Matrix, cluster-analyis, Plot
 myCorpusCopy <- tm_map(myCorpus.URLs.removed, content_transformer(tm_removeStopwords), myStopwords)
 sapply(randn, function(i) {meta(myCorpusCopy[[i]])})
 myCorpusCopy <- tm_filter(myCorpusCopy, function(x){
         meta(x, tag="retweetCount") > 0
 })
+
+# Create a wordcloud, Doc-term Matrix, cluster-analyis, Plot
 
 wordcloud(myCorpusCopy, min.freq=5)
 
