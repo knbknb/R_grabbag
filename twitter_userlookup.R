@@ -18,11 +18,11 @@ access_token_secret     = Sys.getenv("TW_APP_RCMDR_ACCTOKSEC")
 
 setup_twitter_oauth(api_key,api_secret,access_token,access_token_secret)
 #1
-#db.name <- paste0("tweets_allkindsof.sqlite")
-db.name <- paste0("tweets_jobsearch.sqlite")
+db.name <- paste0("tweets_allkindsof.sqlite")
+#db.name <- paste0("tweets_jobsearch.sqlite")
 
-#query.name <- "qry_rstats"
-query.name <- "hamburgjobs_status"
+query.name <- "qry_tatort"
+#query.name <- "hamburgjobs_status"
 conn <- dbConnect(SQLite(), dbname = db.name)
 
 #try to find a table according to our naming convention
@@ -32,7 +32,13 @@ username.table <- grep(query.name, username.table, ignore.case = TRUE, perl=TRUE
 if(length(username.table) <= 0){
         username.table <- paste0(query.name, "_userinfo")
 } 
+#username.table <- "32c3_userinfo"
 
+
+# sql = paste0("SELECT distinct name from ", username.table)  
+# res <- dbSendQuery(conn, sql)
+# users.known <- dbFetch(res)
+# dbClearResult(res)
 userinfo <- data.frame()
 users <- data.frame()
 # some magic:
@@ -54,6 +60,9 @@ tryCatch({
 } ,error=function(e){warning(e); return("cannot open table:")
 })
 
+# only lookup new users
+(users <- sort(setdiff(old_tweets$screenName, old_users$screenName)))
+
 #}
 dbDisconnect(conn)
 stepsize <- 180 # 180 = twitter rate limit
@@ -67,9 +76,11 @@ pb <- txtProgressBar(min = 0, max = length(users), style = 3)
 stepsize2 <- 180 #stepsize
 #stepsize2 <- stepsize
 for(x in seq(0, length(users), by=stepsize)) {
+        timestamp()
         for(i in seq(1 + x, x + stepsize2, by=1) ) {
                 if(i <= length(users)){
                         tryCatch({
+                                printf(paste0(users[[i]], "  "))
                                 tuser <- getUser(users[[i]])
                                 userinfo.part <- tuser$toDataFrame()
                                 userinfo <<- rbind(userinfo, userinfo.part)
@@ -82,8 +93,15 @@ for(x in seq(0, length(users), by=stepsize)) {
                 Sys.sleep((15 * 60)/stepsize)
         }
 }
+timestamp()
 ratelimits()
 append2SQLite(dfr = userinfo, table.name = username.table, db.name = db.name)
+
+
+makeUserTableUnique(db.name = db.name, table.name=username.table)
+
+
+
 
 stop("finished. next part of script is time-comsuming")
 
@@ -98,7 +116,7 @@ stepsize2 <- 180 #
 pb <- txtProgressBar(min = 0, max = nrow(userinfo), style = 3)
 j <- 0
 for(x in seq(0, nrow(userinfo), by=stepsize)) {
-        
+        timestamp()
         for(i in seq(1 + x, x + stepsize2, by=1)) {
                 #i =3
                 url <- userinfo[i, "url"]
@@ -111,7 +129,7 @@ for(x in seq(0, nrow(userinfo), by=stepsize)) {
                 setTxtProgressBar(pb, j)
         }
 }
-
+timestamp()
 
 #tweets.langs <-unique( userinfo[grepl("^.", userinfo$lang, perl = TRUE) & !is.na(userinfo$url) ,"lang"])
 

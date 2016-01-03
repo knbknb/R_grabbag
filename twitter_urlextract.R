@@ -28,20 +28,23 @@ ratelimits()
 #
 # geocode:52.5226762,13.3790944,50mi
 #
-days_back <- 5
+days_back <- 9
 (date_back <- format(now() - days(days_back), "%Y-%m-%d"))
-days_until <- 0
+days_until <- 4
 (date_until <- format(now() - days(days_until), "%Y-%m-%d"))
 (query.job <- paste0("#potsdam (#job OR #jobs OR #stellenangebot) -RT since:" , date_back, " until:",date_until))
 
-query.name <- "berlinjobs"
-query.name.table <- paste0(query.name, "_status")
+#query.name <- "berlinjobs"1
+query.name <- "#32c3"
+(query.job <- paste0(query.name, " -RT since:" , date_back, " until:",date_until))
+query.name.table <- paste0("qry_32c3")
 #
 #query <- paste0("#Potsdam -RT since:" , format(now() - days(days_back), "%Y%m%d"))
-tweets <- searchTwitter(query.job,n=1000)
+tweets <- searchTwitter(query.job,n=2000)
 
 # store inside a database, 
-db.name <- "tweets_jobsearch"
+#db.name <- "tweets_jobsearch"
+db.name <- "tweets_allkindsof"
 db.name <- paste0(db.name, ".sqlite")
 register_sqlite_backend(db.name)
 store_tweets_db(tweets,table_name = query.name.table)
@@ -136,7 +139,7 @@ URLs <-tm_shown_meta(myCorpus, ndoc=10,tag="x.uris")
 #length(myCorpus)
 pb <- txtProgressBar(min = 0, max = 3, style = 3)
 i <- 0
-
+timestamp()
 myCorpusCopy <-  tm_map(myCorpus[10:12], function(x){
         i <<- i + 1
         url <- as.character(meta(x)["x.uris"])
@@ -147,9 +150,13 @@ myCorpusCopy <-  tm_map(myCorpus[10:12], function(x){
         } else { printf("cannot unshorten url: ", url)}
         x
 })
+timestamp()
 
-
-myCorpusCopy
+library(openNLP)
+help(openNLP)
+sent_token_annotator <- Maxent_Sent_Token_Annotator()
+word_token_annotator <- Maxent_Word_Token_Annotator()
+a2 <- annotate(content(myCorpus[[1]]), list(sent_token_annotator, word_token_annotator))
 
 
 
