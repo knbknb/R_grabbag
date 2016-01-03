@@ -4,6 +4,8 @@
 *.RData
 *.txt
 *.png
+*sqlite
 pdfs-output/*
 plots-output/*
 twusers
+tweets_jobsearch_hamburgjobs_sqlite
