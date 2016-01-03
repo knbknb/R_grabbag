@@ -3,7 +3,7 @@
 
 tmUtil <- new.env()
 
-util$tm_freqterms <- function(tdm, lowfreq=1, topn=-1){
+tmUtil$tm_freqterms <- function(tdm, lowfreq=1, topn=-1){
         stopifnot(inherits(tdm, c("DocumentTermMatrix", "TermDocumentMatrix")), 
                   is.numeric(lowfreq), is.numeric(topn))
         if (inherits(tdm, "DocumentTermMatrix")) 
@@ -17,28 +17,28 @@ util$tm_freqterms <- function(tdm, lowfreq=1, topn=-1){
         vec <- sort(vec[vec > 0], decreasing = TRUE)[1:topn]
         vec[!is.na(names(vec))]
 }
-#util$removeNonAlnum<-function(x) gsub("[[^:alnum:]]","",x)
+#tmUtil$removeNonAlnum<-function(x) gsub("[[^:alnum:]]","",x)
 
-util$tm_removeNonAlnum <- function(x){
+tmUtil$tm_removeNonAlnum <- function(x){
         doc <- tryCatch ({
                 gsub("\\s\\W+|\\W+\\s"," ",x, perl = TRUE)
         }, error=function(e) e)
         PlainTextDocument(doc)
 }
-attr(util$tm_removeNonAlnum, "help") <- "Remove NonAlphanumeric Characters from Beginning or end of a word within a PlainTextDocument"
+attr(tmUtil$tm_removeNonAlnum, "help") <- "Remove NonAlphanumeric Characters from Beginning or end of a word within a PlainTextDocument"
 
 
-util$tm_removeStopwords <- function(...){
+tmUtil$tm_removeStopwords <- function(...){
         doc <- tryCatch ({
                 removeWords(...)
         }, error=function(e) e)
         PlainTextDocument(doc)
 }
-attr(util$tm_removeStopwords, "help") <- "Remove a Vector of stopwords from a PlainTextDocument.\n
+attr(tmUtil$tm_removeStopwords, "help") <- "Remove a Vector of stopwords from a PlainTextDocument.\n
 call: tm_map(corpus, content_transformer(tm_removeStopwords), myStopwords)"
 
 
-util$tm_convertToUTF8 <- function(x) {
+tmUtil$tm_convertToUTF8 <- function(x) {
         doc <- tryCatch({
                 iconv(enc2utf8(x), sub = "byte")
         },error=function(e){warning(e); return("convertToUTF8(): cannot convert text")
@@ -47,11 +47,11 @@ util$tm_convertToUTF8 <- function(x) {
         #doc
 }
 
-util$tm_shown_meta <- function(corpus, ndoc=1, tag="*") {
+tmUtil$tm_shown_meta <- function(corpus, ndoc=1, tag="*") {
         if(exists("tm_randn")){
                 randn <<- tm_randn
         } else {
-                shown <- n
+                shown <- ndoc
                 shown <- min(shown, length(corpus))
                 randn <- sample(x=length(corpus), size=shown)       
         }
@@ -61,13 +61,13 @@ util$tm_shown_meta <- function(corpus, ndoc=1, tag="*") {
                 sapply(randn, function(i) {meta(corpus[[i]])})
         }
 }
-attr(util$tm_shown_meta, "help") <- "sample n docs from Corpus and show their metadata sections"
+attr(tmUtil$tm_shown_meta, "help") <- "sample n docs from Corpus and show their metadata sections"
 
-util$tm_shown_content <- function(corpus, ndoc=1) {
+tmUtil$tm_shown_content <- function(corpus, ndoc=1) {
         if(exists("tm_randn")){
                 randn <<- tm_randn
         } else {
-                shown <- n
+                shown <- ndoc
                 shown <- min(shown, length(corpus))
                 randn <- sample(x=length(corpus), size=shown)       
         }
@@ -75,9 +75,8 @@ util$tm_shown_content <- function(corpus, ndoc=1) {
         tryCatch({sapply(randn, function(i) {content(corpus[[i]])})}, error=function(e){warning(e); return("cannot show content:")})
         #sapply(randn, function(i) {content(corpus[[i]])})
 }
-attr(util$tm_shown_content, "help") <- "sample n docs from Corpus and show their text content"
+attr(tmUtil$tm_shown_content, "help") <- "sample n docs from Corpus and show their text content"
 
-attr(tmUtil$ratelimits, "help") <- "twitter API endpoints: show which values are different from the default rate limit"
 
 
 ########################################
