@@ -4,8 +4,8 @@
 library(twitteR)
 library(lubridate) # date arrithmetics
 library(tm) # used in second half
-library(filehashSQLite) # simple key-value database, for creating a physical corpus
-#suppressMessages(library(filehashSQLite))
+#library(filehashSQLite) # simple key-value database, for creating a physical corpus
+#suppressMessages(library(filehash))
 source("twitterUtils.R")
 source("tmUtils.R")
 #library(Hmisc)
@@ -28,13 +28,13 @@ ratelimits()
 #
 # geocode:52.5226762,13.3790944,50mi
 #
-days_back <- 1
+days_back <- 5
 (date_back <- format(now() - days(days_back), "%Y-%m-%d"))
 days_until <- 0
 (date_until <- format(now() - days(days_until), "%Y-%m-%d"))
-(query.job <- paste0("#Hamburg (#job OR #jobs OR #stellenangebot) -RT since:" , date_back, " until:",date_until))
+(query.job <- paste0("#potsdam (#job OR #jobs OR #stellenangebot) -RT since:" , date_back, " until:",date_until))
 
-query.name <- "hamburgjobs"
+query.name <- "berlinjobs"
 query.name.table <- paste0(query.name, "_status")
 #
 #query <- paste0("#Potsdam -RT since:" , format(now() - days(days_back), "%Y%m%d"))
@@ -42,16 +42,18 @@ tweets <- searchTwitter(query.job,n=1000)
 
 # store inside a database, 
 db.name <- "tweets_jobsearch"
-register_sqlite_backend(paste0(db.name, ".sqlite"))
-
+db.name <- paste0(db.name, ".sqlite")
+register_sqlite_backend(db.name)
 store_tweets_db(tweets,table_name = query.name.table)
+makeTweetsTableUnique(db.name = db.name, table.name=query.name.table)
 #store_users_db(tweets,table_name = paste0(query.name, "_users"))
 tweets.from_db = load_tweets_db(as.data.frame = TRUE, table_name = query.name.table)
-(dim(tweets.from_db))
-# only take tweets with geocoordinates
+
 tweets.from_db$longitude <- as.double(tweets.from_db$longitude)
 tweets.from_db$latitude <- as.double(tweets.from_db$latitude)
-tweets.df <- unique(tweets.from_db[tweets.from_db$longitude > 0 | is.na(tweets.from_db$longitude),])
+#tweets.df <- twitteR::twListToDF(tweets)
+
+tweets.df <- tweets.from_db[tweets.from_db$longitude > 0 | is.na(tweets.from_db$longitude),]
 paste("unique tweets:")
 (dim(tweets.df))
 #print as YAML
@@ -62,12 +64,14 @@ scrnames <- tapply(tweets.df$text, tweets.df$screenName, length)
 (scrnames[names(scrnames[order(scrnames, decreasing = TRUE)])[1:10]])
 
 # filter results
-searchstr <- "data|soft"
+searchstr <- "dat|soft|analy|geo|min|syst|bio"
 tweets.df <- tweets.df[grepl(searchstr, tweets.df$text, perl=TRUE, ignore.case = TRUE),]
-paste("unique tweets about: ", searchstr)
+negstr <- " NY|Oracle|Berlin,?\\s*WI|Berlin,?\\s*WI|"
+tweets.df <- tweets.df[!grepl(negstr, tweets.df$text, perl=TRUE, ignore.case = FALSE),]
+paste(" tweets about: ", searchstr)
 (dim(tweets.df))
-#print as YAML
-ppy(tail(tweets.df, 2))
+#print a few as YAML
+ppy(tail(tweets.df[,"text"], nrow(tweets.df)))
 
 #build corpus, simple way
 #myCorpus <- Corpus(VectorSource(as.vector(tweets.df.text)))
@@ -77,30 +81,7 @@ dfsrc <- DataframeSource(tweets.df)
 myCorpus <- Corpus(dfsrc,
                     readerControl = list(reader=commonReader()))
 
-# read in physical corpus , combine with new tweets
-s <- paste0(db.name, "_", query.name, "_sqlite") #replace mydat with something more descriptive 
-if( file.exists(s)){
-        db <- dbInit(s, "SQLite")
-        pc <- dbLoad(db)
-        myCorpus <- c(pc, myCorpus)
-} else {
-        #pc = PCorpus(DataframeSource(csv), readerControl = list(language = "en"), dbControl = list(dbName = s, dbType = "SQLite"))
-        dfsrc <- DataframeSource(tweets.df)
-        myCorpus <- Corpus(dfsrc,
-                           readerControl = list(reader=commonReader(),
-                                                dbControl = list(dbName = s, dbType = "SQLite")))
-        dbCreate(s, "SQLite")
-        db <- dbInit(s, "SQLite")
-        #set.seed(234)
-        # add another record, just to show we can.
-        # key="test", value = "Hi there"
-        #dbInsert(db, "test", "hi there")
-} 
-        
 
-shown <- 15
-shown <- min(length(myCorpus), shown)
-randn <- sample(length(myCorpus), shown)
 myCorpus <- tm_map(myCorpus, content_transformer(tm_convertToUTF8))
 
 myStopwords <- c("<ed><ae><ba><ed><be><85", "<ed><ae><ba><ed><be><85>")
@@ -115,6 +96,8 @@ myCorpus <- tm_map(myCorpus, content_transformer(tm_removeNonAlnum))
 # would invalidate case-sensitive urls by twitter (t.co)
 #myCorpus <- tm_map(myCorpus, content_transformer(tolower)) 
 tm_shown_meta(myCorpus, ndoc=2)
+
+#
 
 # 'id' metadata entity becomes 'description' plus 'screenName' - easier for DTMs
 tryCatch({myCorpus <- tm_map(myCorpus, setId)}, error=function(e){warning(e); return("cannot set heading:")})

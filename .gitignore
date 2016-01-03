@@ -5,6 +5,7 @@
 *.txt
 *.png
 *sqlite
+*filehash
 pdfs-output/*
 plots-output/*
 twusers

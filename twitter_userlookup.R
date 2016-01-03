@@ -18,8 +18,11 @@ access_token_secret     = Sys.getenv("TW_APP_RCMDR_ACCTOKSEC")
 
 setup_twitter_oauth(api_key,api_secret,access_token,access_token_secret)
 #1
-db.name <- paste0("tweets_allkindsof.sqlite")
-query.name <- "qry_rstats"
+#db.name <- paste0("tweets_allkindsof.sqlite")
+db.name <- paste0("tweets_jobsearch.sqlite")
+
+#query.name <- "qry_rstats"
+query.name <- "hamburgjobs_status"
 conn <- dbConnect(SQLite(), dbname = db.name)
 
 #try to find a table according to our naming convention
