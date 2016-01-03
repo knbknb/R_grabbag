@@ -149,6 +149,14 @@ twitterUtil$ratelimits <- function(x){
 }
 attr(twitterUtil$ratelimits, "help") <- "twitter API endpoints: show which values are different from the default rate limit"
 
+twitterUtil$append2SQLite <- function(dfr, db.name, table.name){
+        #username.table <- paste0(query.name,"_userinfo")
+        conn <- dbConnect(SQLite(), dbname = db.name)
+        dbWriteTable(conn, name=table.name, append=TRUE,
+                     value=unique(as.data.frame(dfr)))
+        dbDisconnect(conn)
+}
+attr(twitterUtil$append2SQLite, "help") <- "append a a data frame to a table in an SQLite database"
 
 ########################################
 ## Has to be last in file. 
