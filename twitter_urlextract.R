@@ -5,6 +5,7 @@ library(twitteR)
 library(lubridate) # date arrithmetics
 library(tm) # used in second half
 source("twitterUtils.R")
+source("tmUtils.R")
 #library(Hmisc)
 setwd("/mnt/hd2tb/Documents/coursera/datascience/getting_data/twitter/")
 ##Authenticate here to query the twitter API##
@@ -120,7 +121,7 @@ myCorpusCopy <-  tm_map(myCorpus, function(x){
         url <- as.character(meta(x)["x.uris"])
         if(! (url == "character(0)") & nchar(url) > 0){
                 printf(paste0(" ", i, ": ", url, "\n"))
-                meta(x)["x.uris.resolved"] <- ifelse(nchar(url) > 0, as.character(unshorten_url(url)), "")
+                meta(x)["x.uris.resolved"] <- ifelse(nchar(url) > 0, unshorten_url(url), "")
                 setTxtProgressBar(pb, i)
         }
         x

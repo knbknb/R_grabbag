@@ -9,6 +9,7 @@ library(dplyr) # for bind_rows
 library(RCurl) # for uri.exists() and resolving urls
 setwd("/mnt/hd2tb/Documents/coursera/datascience/getting_data/twitter/")
 source("twitterUtils.R")
+source("tmUtils.R")
 
 api_key   =        Sys.getenv("TW_APP_RCMDR_APIKEY")
 api_secret=        Sys.getenv("TW_APP_RCMDR_APISEC")
@@ -18,8 +19,10 @@ access_token_secret     = Sys.getenv("TW_APP_RCMDR_ACCTOKSEC")
 setup_twitter_oauth(api_key,api_secret,access_token,access_token_secret)
 #1
 db.name <- paste0("tweets_allkindsof.sqlite")
-query.name <- "qry_tatort"
+query.name <- "qry_rstats"
 conn <- dbConnect(SQLite(), dbname = db.name)
+
+#try to find a table according to our naming convention
 #filter twice 
 username.table <- grep("user", dbListTables(conn), ignore.case = TRUE, perl=TRUE, value=TRUE)
 username.table <- grep(query.name, username.table, ignore.case = TRUE, perl=TRUE, value=TRUE)
@@ -30,7 +33,7 @@ if(length(username.table) <= 0){
 userinfo <- data.frame()
 users <- data.frame()
 # some magic:
-# try to open a userinfo table corresponding to the query.name
+# try to open an EXISTING userinfo table corresponding to the query.name
 tryCatch({
         old_users <- dbReadTable(conn, username.table)
         old_users$created <- as.character(as.POSIXct(old_users$created,origin = "1970-01-01"))
@@ -39,7 +42,7 @@ tryCatch({
 })
 
 
-
+# open table of tweets, containing some NEW users
 #if(nrow(userinfo) == 0){
 tryCatch({
         old_tweets <- dbReadTable(conn, query.name)
@@ -51,9 +54,6 @@ tryCatch({
 #}
 dbDisconnect(conn)
 stepsize <- 180 # 180 = twitter rate limit
-shown <- 5 # length(users)
-(shown <- min(shown, stepsize) )
-(randn <- sample(x=length(users), size=shown, replace=TRUE))
 
 ratelimits()
 #userinfo <-  old_users
@@ -80,21 +80,35 @@ for(x in seq(0, length(users), by=stepsize)) {
         }
 }
 ratelimits()
+append2SQLite(dfr = userinfo, table.name = username.table, db.name = db.name)
 
-# resolve anonymous t.co links 
-pb <- txtProgressBar(min = 0, max = length(userinfo), style = 3)
-for(x in seq(0, length(userinfo), by=stepsize)) {
+stop("finished. next part of script is time-comsuming")
+
+#
+#
+#
+#
+#
+#
+stepsize2 <- 180 #
+# resolve anonymous t.co links - THIS IS VERY SLOW
+pb <- txtProgressBar(min = 0, max = nrow(userinfo), style = 3)
+j <- 0
+for(x in seq(0, nrow(userinfo), by=stepsize)) {
+        
         for(i in seq(1 + x, x + stepsize2, by=1)) {
                 #i =3
                 url <- userinfo[i, "url"]
                 if(url.exists(url) & (i <= length(userinfo))){
-                        userinfo[i, "url"] <- as.character(unshorten_url(url))
+                        userinfo[i, "url"] <- unshorten_url(url)
                         url
                 }
                 # update progress bar
-                setTxtProgressBar(pb, i)
+                j <<- j + 1
+                setTxtProgressBar(pb, j)
         }
 }
+
 
 #tweets.langs <-unique( userinfo[grepl("^.", userinfo$lang, perl = TRUE) & !is.na(userinfo$url) ,"lang"])
 
@@ -111,9 +125,5 @@ for(x in 1:nrow(userinfo)) {
         }
 }
 
-#username.table <- paste0(query.name,"_userinfo")
-conn <- dbConnect(SQLite(), dbname = db.name)
-dbWriteTable(conn, name=username.table, append=TRUE,
-             value=unique(as.data.frame(userinfo)))
-dbDisconnect(conn)
+#append2SQLite(dfr = userinfo, table.name = username.table, db.name = db.name)
 

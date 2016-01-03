@@ -6,11 +6,11 @@ library(twitteR)
 library(lubridate) # days back
 library(tm) 
 library(Hmisc) # for %nin%
-library("wordcloud")
+library(wordcloud)
 library(dplyr) # for bind_rows
 setwd("/mnt/hd2tb/Documents/coursera/datascience/getting_data/twitter/")
 source("twitterUtils.R")
-
+source("tmUtils.R")
 ##Authenticate here to query the twitter API##
 ###You need to create an app at https://apps.twitter.com/app/ ###
 #sysenv_search("TW_APP")
@@ -34,11 +34,13 @@ ratelimits()
 # geocode:52.5226762,13.3790944,50mi
 #
 is_stored <- FALSE
-days_back <- 10
-date_back <- format(now() - days(days_back), "%Y-%m-%d")
-#query <- paste0("#potsdam -#nowplaying -RT since:" , date_back)
-query <- paste0("#tatort -RT since:" , date_back)
-query.name <- "qry_tatort"
+days_back <- 1
+(date_back <- format(now() - days(days_back), "%Y-%m-%d"))
+days_until <- 0
+(date_until <- format(now() - days(days_until), "%Y-%m-%d"))
+(query <- paste0("#rstats -RT since:" , date_back, " until:",date_until))
+
+query.name <- "qry_rstats"
 tweets <- searchTwitter(query,n=1000)
 # store inside a database, 
 db.name <- paste0("tweets_allkindsof.sqlite")
@@ -75,17 +77,13 @@ myCorpus <- DataframeSource(tweets.df)
 myCorpus <- Corpus(myCorpus,
                     readerControl = list(reader=commonReader()))
 
-shown <- 15
-shown <- min(shown, length(myCorpus))
-randn <- sample(x=length(myCorpus), size=shown)
+
 #myCorpus <- tm_map(myCorpus, content_transformer(tm_convertToUTF8))
 #sapply(myCorpus[which(!is.na(sapply(myCorpus, content)))], content)
-tryCatch({sapply(randn, function(i) {content(myCorpus[[i]])})}, error=function(e){warning(e); return("cannot show content:")})
-sapply(randn, function(i) {meta(myCorpus[[i]], tag="author")})
-sapply(randn, function(i) {meta(myCorpus[[i]], tag="retweetCount")})
-sapply(randn, function(i) {meta(myCorpus[[i]])})
+tm_shown_content(corpus = myCorpus, ndoc = 5)
 
 
+# we want to create plots: 
 # process tweets: remove weird characters, URLs, most hashtags; convert to lowercase 
 myCorpus.URLs.removed <- tm_map(myCorpus, content_transformer(tm_convertToUTF8))
 myCorpus.URLs.removed <- tm_map(myCorpus.URLs.removed, content_transformer(removeURL))
@@ -99,23 +97,24 @@ tryCatch({myCorpus.URLs.removed <- tm_map(myCorpus.URLs.removed, setId)}, error=
 # add a humanreadable datestring
 myCorpus.URLs.removed <- tm_map(myCorpus.URLs.removed, setDatestr)
 
-# again, show a few
-sapply(randn, function(i) {meta(myCorpus.URLs.removed[[i]])})
-tryCatch({sapply(randn, function(i) {content(myCorpus.URLs.removed[[i]])})}, error=function(e){warning(e); return("cannot show content:")})
-sapply(randn, function(i) {tm::termFreq(myCorpus.URLs.removed[[i]])})
 
+# again, show a few
+tm_shown_meta(corpus = myCorpus.URLs.removed, ndoc=5)
+tm_shown_meta(corpus = myCorpus.URLs.removed, ndoc=5, tag="author")
+tm_shown_meta(corpus = myCorpus.URLs.removed, ndoc=2, tag="retweetCount")
+tm_shown_content(corpus = myCorpus.URLs.removed, ndoc=2)
 
 
 myStopwords <- c(stopwords("english"), stopwords("german"), "rt", "@", "-", "via")
 myCorpusCopy <- tm_map(myCorpus.URLs.removed, content_transformer(tm_removeStopwords), myStopwords)
-sapply(randn, function(i) {meta(myCorpusCopy[[i]])})
+
 myCorpusCopy <- tm_filter(myCorpusCopy, function(x){
         meta(x, tag="retweetCount") > 0
 })
 
 # Create a wordcloud, Doc-term Matrix, cluster-analyis, Plot
 
-wordcloud(myCorpusCopy, min.freq=5)
+wordcloud(myCorpus.URLs.removed, min.freq=5)
 
 tdm <- TermDocumentMatrix(myCorpusCopy,control=list(wordLengths=c(1,Inf)))
 tdm <- tdm[Terms(tdm) %nin% myStopwords,]
@@ -138,7 +137,7 @@ old.par <- par(mar = c(0, 0, 0, 0))
 par(mar = par("mar") + c(0,0,0,50))
 
 #outfile <- paste0(query.name, "--", date_back, "-dendrogram.svg")
-outfile <- paste0(query.name, "--test-", date_back, "-dendrogram.png")
+(outfile <- paste0(query.name, "--test-", date_back, "-dendrogram.png"))
 
 dopng(outfile, cmd=
   plot(as.dendrogram(fit), horiz = TRUE, frame.plot = FALSE,
