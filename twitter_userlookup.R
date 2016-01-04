@@ -7,7 +7,7 @@ library(twitteR)
 library(RSQLite)
 library(dplyr) # for bind_rows
 library(RCurl) # for uri.exists() and resolving urls
-setwd("/mnt/hd2tb/Documents/coursera/datascience/getting_data/twitter/")
+setwd("/home/knut/code/git/_my/tweets2sqlite")
 source("twitterUtils.R")
 source("tmUtils.R")
 

@@ -7,7 +7,7 @@ library(lubridate) # days back
 library(tm) 
 library(wordcloud)
 library(dplyr) # for bind_rows
-setwd("/mnt/hd2tb/Documents/coursera/datascience/getting_data/twitter/")
+setwd("/home/knut/code/git/_my/tweets2sqlite")
 source("twitterUtils.R")
 source("tmUtils.R")
 ##Authenticate here to query the twitter API##

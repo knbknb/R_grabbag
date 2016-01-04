@@ -9,7 +9,7 @@ library(tm) # used in second half
 source("twitterUtils.R")
 source("tmUtils.R")
 #library(Hmisc)
-setwd("/mnt/hd2tb/Documents/coursera/datascience/getting_data/twitter/")
+setwd("/home/knut/code/git/_my/tweets2sqlite")
 ##Authenticate here to query the twitter API##
 ###You need to create an app at https://apps.twitter.com/app/ ###
 api_key   =        Sys.getenv("TW_APP_RCMDR_APIKEY")
