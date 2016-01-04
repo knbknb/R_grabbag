@@ -15,7 +15,7 @@ api_key   =        Sys.getenv("TW_APP_RCMDR_APIKEY")
 api_secret=        Sys.getenv("TW_APP_RCMDR_APISEC")
 access_token            = Sys.getenv("TW_APP_RCMDR_ACCTOK")
 access_token_secret     = Sys.getenv("TW_APP_RCMDR_ACCTOKSEC")
-
+options(httr_oauth_cache=TRUE)
 setup_twitter_oauth(api_key,api_secret,access_token,access_token_secret)
 #1
 db.name <- paste0("tweets_allkindsof.sqlite")

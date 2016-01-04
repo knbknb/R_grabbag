@@ -17,7 +17,7 @@ api_secret=        Sys.getenv("TW_APP_RCMDR_APISEC")
 access_token            = Sys.getenv("TW_APP_RCMDR_ACCTOK")
 access_token_secret     = Sys.getenv("TW_APP_RCMDR_ACCTOKSEC")
 
-
+options(httr_oauth_cache=TRUE)
 setup_twitter_oauth(api_key,api_secret,access_token,access_token_secret)
 
 
@@ -28,16 +28,16 @@ ratelimits()
 #
 # geocode:52.5226762,13.3790944,50mi
 #
-days_back <- 9
+days_back <- 5
 (date_back <- format(now() - days(days_back), "%Y-%m-%d"))
-days_until <- 4
+days_until <- 0
 (date_until <- format(now() - days(days_until), "%Y-%m-%d"))
 (query.job <- paste0("#potsdam (#job OR #jobs OR #stellenangebot) -RT since:" , date_back, " until:",date_until))
 
 #query.name <- "berlinjobs"1
-query.name <- "#32c3"
+query.name <- "#rstats"
 (query.job <- paste0(query.name, " -RT since:" , date_back, " until:",date_until))
-query.name.table <- paste0("qry_32c3")
+query.name.table <- paste0("qry_rstats")
 #
 #query <- paste0("#Potsdam -RT since:" , format(now() - days(days_back), "%Y%m%d"))
 tweets <- searchTwitter(query.job,n=2000)
@@ -152,13 +152,6 @@ myCorpusCopy <-  tm_map(myCorpus[10:12], function(x){
 })
 timestamp()
 
-library(openNLP)
-help(openNLP)
-sent_token_annotator <- Maxent_Sent_Token_Annotator()
-word_token_annotator <- Maxent_Word_Token_Annotator()
-a2 <- annotate(content(myCorpus[[1]]), list(sent_token_annotator, word_token_annotator))
-
-
 
 tm_shown_meta(myCorpusCopy, ndoc=3)
 
@@ -171,3 +164,10 @@ res <- sapply(URLS_unshortened, function(x){
 #        printf(paste0("# ", x[[1]], "\n"))
         printf(paste0("firefox ", x[[2]], "\n"))  
 })
+
+
+library(openNLP)
+help(openNLP)
+sent_token_annotator <- Maxent_Sent_Token_Annotator()
+word_token_annotator <- Maxent_Word_Token_Annotator()
+a2 <- annotate(content(myCorpus[[1]]), list(sent_token_annotator, word_token_annotator))

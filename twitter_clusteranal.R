@@ -5,7 +5,6 @@
 library(twitteR)
 library(lubridate) # days back
 library(tm) 
-library(Hmisc) # for %nin%
 library(wordcloud)
 library(dplyr) # for bind_rows
 setwd("/mnt/hd2tb/Documents/coursera/datascience/getting_data/twitter/")
@@ -19,8 +18,8 @@ api_key   =        Sys.getenv("TW_APP_RCMDR_APIKEY")
 api_secret=        Sys.getenv("TW_APP_RCMDR_APISEC")
 access_token            = Sys.getenv("TW_APP_RCMDR_ACCTOK")
 access_token_secret     = Sys.getenv("TW_APP_RCMDR_ACCTOKSEC")
-
-setup_twitter_oauth(api_key,api_secret,access_token,access_token_secret)
+options(httr_oauth_cache=TRUE)
+        setup_twitter_oauth(api_key,api_secret,access_token,access_token_secret)
 #1
 ratelimits()
 #Search twitter for 1000 tweets containing the word 'Cluster Analysis'
@@ -117,7 +116,7 @@ myCorpusCopy <- tm_filter(myCorpusCopy, function(x){
 wordcloud(myCorpus.URLs.removed, min.freq=5)
 
 tdm <- TermDocumentMatrix(myCorpusCopy,control=list(wordLengths=c(1,Inf)))
-tdm <- tdm[Terms(tdm) %nin% myStopwords,]
+tdm <- tdm[setdiff(Terms(tdm),myStopwords),]
 
 tm_freqterms(tdm, topn = 115)
         
