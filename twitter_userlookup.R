@@ -21,26 +21,42 @@ setup_twitter_oauth(api_key,api_secret,access_token,access_token_secret)
 db.name <- paste0("tweets_allkindsof.sqlite")
 #db.name <- paste0("tweets_jobsearch.sqlite")
 
-query.name <- "qry_tatort"
+query.name <- "qry_potsdam"
 #query.name <- "hamburgjobs_status"
 conn <- dbConnect(SQLite(), dbname = db.name)
 
+#table.type = "users"
+table.type = "followers"
+
 #try to find a table according to our naming convention
 #filter twice 
-username.table <- grep("user", dbListTables(conn), ignore.case = TRUE, perl=TRUE, value=TRUE)
+if (table.type == "followers"){
+        table.postfix <- "_followerinfo"        
+        table.searchstr <- "follower"        
+        table.users_followers <- paste0(query.name, "_users_followers")
+        try({
+                sql <- paste0('CREATE TABLE "', table.users_followers,'" ("userid" INTEGER NOT NULL , "followerid" INTEGER NOT NULL )')
+        sth <- dbSendQuery(conn, sql)
+        rm
+        }, silent = TRUE)
+        
+} else {
+        table.postfix <- "_userinfo"
+        table.searchstr <- "user"
+}
+
+username.table <- grep(table.searchstr, dbListTables(conn), ignore.case = TRUE, perl=TRUE, value=TRUE)
 username.table <- grep(query.name, username.table, ignore.case = TRUE, perl=TRUE, value=TRUE)
 if(length(username.table) <= 0){
-        username.table <- paste0(query.name, "_userinfo")
+        username.table <- paste0(query.name, table.postfix)
 } 
-#username.table <- "32c3_userinfo"
-
-
 # sql = paste0("SELECT distinct name from ", username.table)  
 # res <- dbSendQuery(conn, sql)
 # users.known <- dbFetch(res)
 # dbClearResult(res)
 userinfo <- data.frame()
 users <- data.frame()
+users_followers <- data.frame()
 # some magic:
 # try to open an EXISTING userinfo table corresponding to the query.name
 tryCatch({
@@ -60,10 +76,10 @@ tryCatch({
 } ,error=function(e){warning(e); return("cannot open table:")
 })
 
-# only lookup new users
-(users <- sort(setdiff(old_tweets$screenName, old_users$screenName)))
-
-#}
+# only lookup new users, only if table exists
+if(exists("old_users")){
+        (users <- sort(setdiff(old_tweets$screenName, old_users$screenName)))
+}
 dbDisconnect(conn)
 stepsize <- 180 # 180 = twitter rate limit
 
@@ -75,15 +91,32 @@ pb <- txtProgressBar(min = 0, max = length(users), style = 3)
 #set to small value for testing
 stepsize2 <- 180 #stepsize
 #stepsize2 <- stepsize
-for(x in seq(0, length(users), by=stepsize)) {
+# length(users)
+printf(paste0("fetching info for ", length(users), " users\n"))
+for(x in seq(0, stepsize, by=1)) {
         timestamp()
         for(i in seq(1 + x, x + stepsize2, by=1) ) {
                 if(i <= length(users)){
                         tryCatch({
                                 printf(paste0(users[[i]], "  "))
-                                tuser <- getUser(users[[i]])
-                                userinfo.part <- tuser$toDataFrame()
-                                userinfo <<- rbind(userinfo, userinfo.part)
+                                if (table.type == "followers"){
+                                        user <- getUser(users[[i]])
+                                        user$getFollowerIDs(n=1)
+                                        tusers <- getFollowersList(user, nMax = 1000)
+                                        # all follwers to single data frame
+                                        res <- lapply(tusers[[1]], function(tuser){
+                                                userinfo.part <- tuser$toDataFrame()
+                                                userinfo <<- rbind(userinfo, userinfo.part)
+                                                # add an entry to bridging table
+                                                users_followers.part <- data.frame(userid=user$id, followerid=tuser$id)
+                                                append2SQLite(dfr = users_followers.part, table.name = table.users_followers, db.name = db.name)
+                                        })
+                                } else {
+                                        tuser <- getUser(users[[i]])
+                                        userinfo.part <- tuser$toDataFrame()
+                                        userinfo <<- rbind(userinfo, userinfo.part)
+                                }
+                                
                                 }, error=function(e){warning(e); return("cannot get userdata from twitter API:")
                                 ppy(userinfo.part)
                         })
@@ -99,8 +132,6 @@ append2SQLite(dfr = userinfo, table.name = username.table, db.name = db.name)
 
 
 makeUserTableUnique(db.name = db.name, table.name=username.table)
-
-
 
 
 stop("finished. next part of script is time-comsuming")

@@ -33,13 +33,13 @@ ratelimits()
 # geocode:52.5226762,13.3790944,50mi
 #
 is_stored <- FALSE
-days_back <- 1
+days_back <- 4
 (date_back <- format(now() - days(days_back), "%Y-%m-%d"))
 days_until <- 0
 (date_until <- format(now() - days(days_until), "%Y-%m-%d"))
-(query <- paste0("#rstats -RT since:" , date_back, " until:",date_until))
+(query <- paste0("#potsdam -RT since:" , date_back, " until:",date_until))
 
-query.name <- "qry_rstats"
+query.name <- "qry_potsdam"
 tweets <- searchTwitter(query,n=1000)
 # store inside a database, 
 db.name <- paste0("tweets_allkindsof.sqlite")
@@ -49,23 +49,24 @@ register_sqlite_backend(db.name)
 is_stored <- store_tweets_db(tweets[1],table_name = query.name)
 if (is_stored == TRUE){
         #load all from db, merge with new, remove duplicates, store
-        tweets.df <- twitteR::twListToDF(tweets)
-        tweets.old <- load_tweets_db(as.data.frame = FALSE, table_name = query.name)
-        #tweets.df = rbind(tweets.df, twitteR::twListToDF(tweets.old))
-        # truncate the table 
-        con <- dbConnect(SQLite(), dbname = db.name)
-        rs <- dbSendQuery(con, paste0("delete from ", query.name))
-        dbDisconnect(con)
-        # query
-        
-        is_stored2 <- store_tweets_db(unique(c(tweets, tweets.old)),table_name = query.name)
+#         tweets.df <- twitteR::twListToDF(tweets)
+#         tweets.old <- load_tweets_db(as.data.frame = FALSE, table_name = query.name)
+#         #tweets.df = rbind(tweets.df, twitteR::twListToDF(tweets.old))
+#         # truncate the table 
+#         con <- dbConnect(SQLite(), dbname = db.name)
+#         rs <- dbSendQuery(con, paste0("delete from ", query.name))
+#         dbDisconnect(con)
+#         # query
+#         
+        is_stored2 <- store_tweets_db(tweets,table_name = query.name)
         #store_users_db(tweets,table_name = paste0(query.name, "_users"))
-        tweets.df = unique(load_tweets_db(as.data.frame = TRUE, table_name = query.name))
+        makeTweetsTableUnique(db.name = db.name, table.name=query.name)
+        
+        tweets.df = load_tweets_db(as.data.frame = TRUE, table_name = query.name)
         #tweets.df <- unique(tweets.df[tweets.df$longitude > 0 | is.na(tweets.df$longitude), ])
 } else {
-        tweets.df <- twitteR::twListToDF(tweets)
+        tweets.df <- unique(twitteR::twListToDF(tweets))
 }
-tweets.df <- unique(tweets.df)
 
 ###  create the corpus from a Dataframe of tweets
 ## simple way:
