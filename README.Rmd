@@ -11,6 +11,7 @@ output: html_document
 
 * /home/knut/code/git/_my/R_utils - source()'d R files with useful functions
 
-### Optional:
+### Optional (notes to self):
 
 * /mnt/hd2tb/webdata/twusers/ - old scraped twitter userdata
+* /home/knb/code/git/_my/R_one_offs/data - same loc on different machine
