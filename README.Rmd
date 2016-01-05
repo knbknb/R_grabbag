@@ -8,7 +8,6 @@ output: html_document
 
 ### See also in directories
 
-* /mnt/hd2tb/Documents/coursera/datascience/getting_data/twitter
 * /home/knut/code/git/_my/R_utils - source()'d R files with useful functions
 
 ### Optional:
