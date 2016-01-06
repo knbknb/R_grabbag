@@ -21,7 +21,7 @@ setup_twitter_oauth(api_key,api_secret,access_token,access_token_secret)
 db.name <- paste0("tweets_allkindsof.sqlite")
 #db.name <- paste0("tweets_jobsearch.sqlite")
 
-query.name <- "qry_potsdam"
+query.name <- "qry_code2015"
 #query.name <- "hamburgjobs_status"
 conn <- dbConnect(SQLite(), dbname = db.name)
 

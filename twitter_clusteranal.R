@@ -37,9 +37,9 @@ days_back <- 4
 (date_back <- format(now() - days(days_back), "%Y-%m-%d"))
 days_until <- 0
 (date_until <- format(now() - days(days_until), "%Y-%m-%d"))
-(query <- paste0("#potsdam -RT since:" , date_back, " until:",date_until))
+(query <- paste0("#code2015 -RT since:" , date_back, " until:",date_until))
 
-query.name <- "qry_potsdam"
+query.name <- "qry_code2015"
 tweets <- searchTwitter(query,n=1000)
 # store inside a database, 
 db.name <- paste0("tweets_allkindsof.sqlite")
@@ -114,7 +114,7 @@ myCorpusCopy <- tm_filter(myCorpusCopy, function(x){
 
 # Create a wordcloud, Doc-term Matrix, cluster-analyis, Plot
 
-wordcloud(myCorpus.URLs.removed, min.freq=5)
+wordcloud(myCorpusCopy, min.freq=5)
 
 tdm <- TermDocumentMatrix(myCorpusCopy,control=list(wordLengths=c(1,Inf)))
 tdm <- tdm[setdiff(Terms(tdm),myStopwords),]
@@ -144,4 +144,4 @@ dopng(outfile, cmd=
      xlab="", ylab="", yaxt='n', 
      main = paste0("clustered Tweets for \n'", query, "'"))
 )
-system(paste0("firefox ", outfile))
+printf(paste0("firefox ", outfile))
