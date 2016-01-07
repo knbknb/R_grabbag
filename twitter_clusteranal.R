@@ -33,13 +33,13 @@ ratelimits()
 # geocode:52.5226762,13.3790944,50mi
 #
 is_stored <- FALSE
-days_back <- 4
+days_back <- 9
 (date_back <- format(now() - days(days_back), "%Y-%m-%d"))
 days_until <- 0
 (date_until <- format(now() - days(days_until), "%Y-%m-%d"))
-(query <- paste0("#code2015 -RT since:" , date_back, " until:",date_until))
+(query <- paste0("#kiel -RT since:" , date_back, " until:",date_until))
 
-query.name <- "qry_code2015"
+query.name <- "qry_kiel"
 tweets <- searchTwitter(query,n=1000)
 # store inside a database, 
 db.name <- paste0("tweets_allkindsof.sqlite")
