@@ -11,3 +11,6 @@ plots-output/*
 twusers
 tweets_jobsearch_hamburgjobs_sqlite
 nohup.out
+tweets_allkindsof.sqlite.bak
+tweets_allkindsof.sqlite.20160107.bak
+qry_code2015_userinfo_augmented
