@@ -21,7 +21,7 @@ setup_twitter_oauth(api_key,api_secret,access_token,access_token_secret)
 db.name <- paste0("tweets_allkindsof.sqlite")
 #db.name <- paste0("tweets_jobsearch.sqlite")
 
-query.name <- "qry_code2015"
+query.name <- "qry_kiel"
 #query.name <- "hamburgjobs_status"
 conn <- dbConnect(SQLite(), dbname = db.name)
 
@@ -32,38 +32,43 @@ table.type = "users"
 #filter twice 
 if (table.type == "followers"){
         table.postfix <- "_followerinfo"        
-        table.searchstr <- "follower"        
+        table.searchstr <- "followerinfo"        
         table.users_followers <- paste0(query.name, "_users_followers")
+        # bridging table
         try({
                 sql <- paste0('CREATE TABLE "', table.users_followers,'" ("userid" INTEGER NOT NULL , "followerid" INTEGER NOT NULL )')
         sth <- dbSendQuery(conn, sql)
         rm
         }, silent = TRUE)
         
+        batchsize_userget <- 15 # for looking up follower-lists from twitter
+        
 } else {
         table.postfix <- "_userinfo"
         table.searchstr <- "userinfo"
+        
+        batchsize_userget <- 180 # for fetching users from twitter
+        
 }
 
 username.table <- grep(table.searchstr, dbListTables(conn), ignore.case = TRUE, perl=TRUE, value=TRUE)
-username.table <- grep(query.name, username.table, ignore.case = TRUE, perl=TRUE, value=TRUE)
+username.table <- min(grep(query.name, username.table, ignore.case = TRUE, perl=TRUE, value=TRUE))
 if(length(username.table) <= 0){
         username.table <- paste0(query.name, table.postfix)
 } 
-# sql = paste0("SELECT distinct name from ", username.table)  
-# res <- dbSendQuery(conn, sql)
-# users.known <- dbFetch(res)
-# dbClearResult(res)
+
+
 userinfo <- data.frame()
 users <- data.frame()
 users_followers <- data.frame()
 # some magic:
 # try to open an EXISTING userinfo table corresponding to the query.name
 tryCatch({
-        old_users <- dbReadTable(conn, username.table)
+        old_users <- dbReadTable(conn, paste0(query.name, "_userinfo"))
         #old_users$created <- as.character(as.POSIXct(old_users$created,origin = "1970-01-01"))
         userinfo <- old_users
-} ,error=function(e){warning(e); return("cannot open table:")
+} ,error=function(e){warning(e); 
+        return("cannot open table:")
 })
 
 
@@ -77,8 +82,12 @@ tryCatch({
 })
 
 # only lookup new users, only if table exists
-if(exists("old_users")){
+if(exists("old_users") & table.type == "users"){
         (users <- sort(setdiff(old_tweets$screenName, old_users$screenName)))
+} else if(exists("old_users") & table.type == "followers"){
+        user.without.followerinfo <- dbReadTable(conn, table.users_followers)
+        users <- sort(setdiff(old_users$screenName,  unique(user.without.followerinfo$userScreenName)))
+        rev(users)
 }
 dbDisconnect(conn)
 ratelimit_userget <- 180 # 180 = twitter rate limit 
@@ -87,10 +96,8 @@ ratelimits()
 
 pb <- txtProgressBar(min = 0, max = length(users), style = 3)
 
-batchsize_userget <- 100 # for fetching users from twitter
-
 users_cnt <- length(users)
-#blockonratelimit
+#retryOnRateLimit
 
 
 printf(paste0("fetching info for ", length(users), " users\n"))
@@ -99,26 +106,41 @@ printf(paste0("fetching info for ", length(users), " users\n"))
         #for(i in seq(1 + x, x + batchsize_userget, by=batchsize_userget )) {
         x <- 1
         for(k in seq(x, length(users), by=batchsize_userget )){
-                i <- k + 1
+                i <- k 
                 #k <- i + batchsize_userget
                 if(i <= length(users)){
                         tryCatch({
-                                #printf(paste0(i,"/",length(users),  ": " , users[[i]], "  "))
-                                if (table.type == "followers"){
+                                
+                                printf(paste0(i,"/",length(users),  ": " , users[[i]], "  "))
+                                rlim <-  getCurRateLimitInfo()
+                                
+                                if (table.type == "followers" & as.integer(rlim[rlim$resource == "/followers/ids", "remaining"]) > 0){
                                         printf(paste0("\nGetting followers...  "))
-                                        followees <- lookupUsers(users[i:i+ min(batchsize_userget, length(users))])
-                                        #user$getFollowerIDs(n=1)
+                                        followees <- lookupUsers(users[i:min(batchsize_userget+i, length(users))], retryOnRateLimit=9000)
+                                        #followees <- lookupUsers(users[1:10])
                                         
-                                        tusers <- lapply(followees, function(user) {
-                                                getFollowersList(followees[1], nMax = 1000)
+                                        #user$getFollowerIDs(n=1)
+                                        printf(sapply(followees, "[[", "screenName"))
+                                        tusers <- lapply(as.list(followees), function(user) {
+                                                list(followers = getFollowersList(user, nMax = 1000),
+                                                     username = user)
                                         })
+                                        #tusers[[1]][["followers"]]
                                         # all follwers to single data frame
-                                        res <- lapply(tusers, function(tuser){
-                                                userinfo.part <- tuser$toDataFrame()
-                                                userinfo <<- rbind(userinfo, userinfo.part)
-                                                # add an entry to bridging table
-                                                users_followers.part <- data.frame(userid=user$id, followerid=tuser$id)
-                                                append2SQLite(dfr = users_followers.part, table.name = table.users_followers, db.name = db.name)
+
+                                        res <- lapply(tusers, function(followee){
+                                                #screenName <- min(gsub("^(\\S+)(\\.).+(\\..+$)", "\\1", names(tuser), perl=TRUE))
+                                                screenName <- followee[["username"]]$screenName
+                                                printf(paste0("\nlooking up followers: ",screenName))
+                                                
+                                                printf(paste0("\n"))
+                                                lapply(followee[["followers"]], function(follower){
+                                                        userinfo.part <- twitteR::twListToDF(follower)
+                                                        userinfo <<- rbind(userinfo, userinfo.part)
+                                                        # add an entry to bridging table
+                                                        users_followers.part <- data.frame(userScreenName=rep(screenName, nrow(userinfo.part)), followerScreenName=userinfo.part$screenName)
+                                                        append2SQLite(dfr = users_followers.part, table.name = table.users_followers, db.name = db.name)
+                                                })
                                         })
                                 } else {
                                         printf(paste0("\nRun ", x,  ": Getting users...  i >= ", i , ""))
@@ -134,7 +156,7 @@ printf(paste0("fetching info for ", length(users), " users\n"))
                                 }
                                 
                                 }, error=function(e){warning(e); return("cannot get userdata from twitter API:")
-                                ppy(userinfo.part)
+                                #ppy(userinfo.part)
                         })
                         
                 }
@@ -142,18 +164,33 @@ printf(paste0("fetching info for ", length(users), " users\n"))
                 Sys.sleep((15 * 60)/ratelimit_userget)
         }
 #}
+        
 timestamp()
 ratelimits()
 #userinfo.dates.epoch <- userinfo[grepl("^\\d+$",userinfo$created, perl=TRUE),]
 #userinfo.dates.epoch[, "created"] <- as.character(as.POSIXct(as.integer(userinfo.dates.epoch[, "created"]),origin = "1970-01-01"))
-
-append2SQLite(dfr = unique(userinfo), table.name = username.table, db.name = db.name)
+userinfo[, "row_names"] <- NULL
+append2SQLite(dfr = unique(userinfo), table.name = username.table[1], db.name = db.name)
  
 
+
+
+
 makeUserTableUnique(db.name = db.name, table.name=username.table)
-
-
-stop("finished. next part of script is time-comsuming")
+#rm(user.tablename.augmented)
+username.table.augmented <- paste0(username.table, "_augmented")
+userinfo.augmented <- data.frame(id = userinfo[, "id"], 
+                                 created = as.character(as.POSIXct(as.integer(userinfo[, "created"]),origin = "1970-01-01")),
+                                 followersPerWeek = userinfo$followersCount/
+                                         (age(dob=as.POSIXct(as.integer(userinfo[, "created"]),origin = "1970-01-01"), units = "weeks")+1),
+                                tweetsPerWeek = userinfo$statusesCount/
+                                        (age(dob=as.POSIXct(as.integer(userinfo[, "created"]),origin = "1970-01-01"), units = "weeks")+1))
+#plot(userinfo.augmented$tweetsPerWeek, log10(userinfo.augmented$followersPerWeek), ylim=c(0,1))
+addAugmentedTable(db.name = db.name, table.name=username.table.augmented, table.main.name = username.table)
+append2SQLite(dfr = unique(userinfo.augmented), table.name = username.table.augmented, db.name = db.name)                  
+makeTableUnique(db.name = db.name, table.name=username.table.augmented)
+#dbDisconnect(conn)
+stop("finished. next part of script is t.co url-resolution, very time-consuming")
 
 #
 #
