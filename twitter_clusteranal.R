@@ -33,37 +33,25 @@ ratelimits()
 # geocode:52.5226762,13.3790944,50mi
 #
 is_stored <- FALSE
-days_back <- 9
+days_back <- 7
 (date_back <- format(now() - days(days_back), "%Y-%m-%d"))
 days_until <- 0
 (date_until <- format(now() - days(days_until), "%Y-%m-%d"))
-(query <- paste0("#kiel -RT since:" , date_back, " until:",date_until))
+(query <- paste0("#potsdam -RT since:" , date_back, " until:",date_until))
 
-query.name <- "qry_kiel"
+query.name <- "qry_potsdam"
 tweets <- searchTwitter(query,n=1000)
 # store inside a database, 
 db.name <- paste0("tweets_allkindsof.sqlite")
 register_sqlite_backend(db.name)
 
 #store one tweet to check if sqlite is available
-is_stored <- store_tweets_db(tweets[1],table_name = query.name)
+#is_stored <- store_tweets_db(tweets[1],table_name = query.name)
+is_stored <- FALSE
 if (is_stored == TRUE){
-        #load all from db, merge with new, remove duplicates, store
-#         tweets.df <- twitteR::twListToDF(tweets)
-#         tweets.old <- load_tweets_db(as.data.frame = FALSE, table_name = query.name)
-#         #tweets.df = rbind(tweets.df, twitteR::twListToDF(tweets.old))
-#         # truncate the table 
-#         con <- dbConnect(SQLite(), dbname = db.name)
-#         rs <- dbSendQuery(con, paste0("delete from ", query.name))
-#         dbDisconnect(con)
-#         # query
-#         
         is_stored2 <- store_tweets_db(tweets,table_name = query.name)
-        #store_users_db(tweets,table_name = paste0(query.name, "_users"))
         makeTweetsTableUnique(db.name = db.name, table.name=query.name)
-        
         tweets.df = load_tweets_db(as.data.frame = TRUE, table_name = query.name)
-        #tweets.df <- unique(tweets.df[tweets.df$longitude > 0 | is.na(tweets.df$longitude), ])
 } else {
         tweets.df <- unique(twitteR::twListToDF(tweets))
 }
@@ -77,11 +65,7 @@ myCorpus <- DataframeSource(tweets.df)
 myCorpus <- Corpus(myCorpus,
                     readerControl = list(reader=commonReader()))
 
-
-#myCorpus <- tm_map(myCorpus, content_transformer(tm_convertToUTF8))
-#sapply(myCorpus[which(!is.na(sapply(myCorpus, content)))], content)
 tm_shown_content(corpus = myCorpus, ndoc = 5)
-
 
 # we want to create plots: 
 # process tweets: remove weird characters, URLs, most hashtags; convert to lowercase 
@@ -113,7 +97,6 @@ myCorpusCopy <- tm_filter(myCorpusCopy, function(x){
 })
 
 # Create a wordcloud, Doc-term Matrix, cluster-analyis, Plot
-
 wordcloud(myCorpusCopy, min.freq=5)
 
 tdm <- TermDocumentMatrix(myCorpusCopy,control=list(wordLengths=c(1,Inf)))
