@@ -6,7 +6,7 @@ library(twitteR)
 library(lubridate) # days back
 library(tm) 
 library(wordcloud)
-library(dplyr) # for bind_rows
+#library(dplyr) # 
 setwd("/home/knut/code/git/_my/tweets2sqlite")
 source("twitterUtils.R")
 source("tmUtils.R")
@@ -33,28 +33,28 @@ ratelimits()
 # geocode:52.5226762,13.3790944,50mi
 #
 is_stored <- FALSE
-days_back <- 7
+days_back <- 1
 (date_back <- format(now() - days(days_back), "%Y-%m-%d"))
 days_until <- 0
 (date_until <- format(now() - days(days_until), "%Y-%m-%d"))
-(query <- paste0("#potsdam -RT since:" , date_back, " until:",date_until))
-
-query.name <- "qry_potsdam"
-tweets <- searchTwitter(query,n=1000)
-# store inside a database, 
-db.name <- paste0("tweets_allkindsof.sqlite")
-register_sqlite_backend(db.name)
-
-#store one tweet to check if sqlite is available
-#is_stored <- store_tweets_db(tweets[1],table_name = query.name)
-is_stored <- FALSE
-if (is_stored == TRUE){
-        is_stored2 <- store_tweets_db(tweets,table_name = query.name)
-        makeTweetsTableUnique(db.name = db.name, table.name=query.name)
-        tweets.df = load_tweets_db(as.data.frame = TRUE, table_name = query.name)
-} else {
-        tweets.df <- unique(twitteR::twListToDF(tweets))
-}
+(query <- paste0("#wirhabenessatt -RT since:" , date_back, " until:",date_until))
+        
+        query.name <- "qry_agrardemo"
+        tweets <- searchTwitter(query,n=2000)
+        # store inside a database, 
+        db.name <- paste0("db/tweets_allkindsof.sqlite")
+        register_sqlite_backend(db.name)
+        
+        #store one tweet to check if sqlite is available
+        is_stored <- store_tweets_db(tweets[1],table_name = query.name)
+        #is_stored <- FALSE
+        if (is_stored == TRUE){
+                is_stored2 <- store_tweets_db(tweets,table_name = query.name)
+                makeTweetsTableUnique(db.name = db.name, table.name=query.name)
+                tweets.df = load_tweets_db(as.data.frame = TRUE, table_name = query.name)
+        } else {
+                tweets.df <- unique(twitteR::twListToDF(tweets))
+        }
 
 ###  create the corpus from a Dataframe of tweets
 ## simple way:
@@ -71,7 +71,8 @@ tm_shown_content(corpus = myCorpus, ndoc = 5)
 # process tweets: remove weird characters, URLs, most hashtags; convert to lowercase 
 myCorpus.URLs.removed <- tm_map(myCorpus, content_transformer(tm_convertToUTF8))
 myCorpus.URLs.removed <- tm_map(myCorpus.URLs.removed, content_transformer(removeURL))
-myCorpus.URLs.removed <- tm_map(myCorpus.URLs.removed, content_transformer(tm_removeNonAlnum))
+#myCorpus.URLs.removed <- tm_map(myCorpus.URLs.removed, content_transformer(tm_removeNonAlnum))
+myCorpus.URLs.removed <- tm_map(myCorpus.URLs.removed, content_transformer(removeFirstChars))
 myCorpus.URLs.removed <- tm_map(myCorpus.URLs.removed, content_transformer(tolower))
 
 # first 3 words become 'heading' metadata entity
@@ -89,7 +90,7 @@ tm_shown_meta(corpus = myCorpus.URLs.removed, ndoc=2, tag="retweetCount")
 tm_shown_content(corpus = myCorpus.URLs.removed, ndoc=2)
 
 
-myStopwords <- c(stopwords("english"), stopwords("german"), "rt", "@", "-", "via")
+myStopwords <- c(stopwords("english"), stopwords("german"), "rt", "&amp;","!", ",", "@", "-", "via")
 myCorpusCopy <- tm_map(myCorpus.URLs.removed, content_transformer(tm_removeStopwords), myStopwords)
 
 myCorpusCopy <- tm_filter(myCorpusCopy, function(x){

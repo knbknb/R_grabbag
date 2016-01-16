@@ -18,15 +18,14 @@ access_token_secret     = Sys.getenv("TW_APP_RCMDR_ACCTOKSEC")
 options(httr_oauth_cache=TRUE)
 setup_twitter_oauth(api_key,api_secret,access_token,access_token_secret)
 #1
-db.name <- paste0("tweets_allkindsof.sqlite")
+db.name <- paste0("db/tweets_allkindsof.sqlite")
 #db.name <- paste0("tweets_jobsearch.sqlite")
 
-query.name <- "qry_32c3"
-#query.name <- "hamburgjobs_status"
+query.name <- "qry_agrardemo"
 conn <- dbConnect(SQLite(), dbname = db.name)
 
-#table.type = "users"
-table.type = "followers"
+table.type = "users"
+#table.type = "followers"
 
 ratelimit_userget <- 180 # 180 = twitter rate limit 
 
@@ -106,77 +105,76 @@ users_cnt <- length(users)
 
 printf(paste0("fetching info for ", length(users), " users\n"))
 #for(x in seq_along(1:(users_cnt %% ratelimit_userget))) {
-        timestamp()
-        
-        x <- 1
-        #for(k in seq(x, length(users), by=batchsize_userget )){
-        for(k in seq(1, length(users), by=batchsize_userget )){
-                i <- k 
-                #k <- i + batchsize_userget
-                if(i <= length(users)){
-                        tryCatch({
-                                
-                                printf(paste0(" ", i,"/",length(users),  ": " , users[[i]], "  "))
-                                rlim <-  getCurRateLimitInfo()
-                                
-                                if (table.type == "followers" & as.integer(rlim[rlim$resource == "/followers/ids", "remaining"]) > 0){
-                                        printf(paste0("\nGetting followers...  "))
-                                        #, retryOnRateLimit=9000
-                                        followees <- lookupUsers(users[i:min(batchsize_userget, length(users))])
-                                        #followees <- lookupUsers(users[1:10])
-                                        
-                                        #user$getFollowerIDs(n=1)
-                                        printf(sapply(followees, "[[", "screenName"))
-                                        tusers <- lapply(as.list(followees), function(user) {
-                                                list(followers = getFollowersList(user, nMax = 1000, retryOnRateLimit=10000),
-                                                     username = user$getScreenName())
-                                        })
-                                        #tusers[[1]][["followers"]]
-                                        # all follwers to single data frame
+timestamp()
 
-                                        res <- lapply(tusers, function(followee){
-                                                #screenName <- min(gsub("^(\\S+)(\\.).+(\\..+$)", "\\1", names(tuser), perl=TRUE))
-                                                #screenName <- followee$getScreenName()
-                                                screenName <- followee[["username"]]
-                                                printf(paste0(screenName, "\n"))
-                                                printf(paste0("\nlooking up followers: ",screenName))
-                                                if(is.character(screenName)){
-                                                        printf(paste0("\n"))
-                                                        lapply(followee[["followers"]], function(follower){
-                                                                userinfo.part <- twitteR::twListToDF(follower)
-                                                                userinfo <<- rbind(userinfo, userinfo.part)
-                                                                # add an entry to bridging table
-                                                                users_followers.part <- data.frame(userScreenName=rep(screenName, nrow(userinfo.part)), followerScreenName=userinfo.part$screenName)
-                                                                users_followers <<- rbind(users_followers, userinfo.part)
-                                                                #append2SQLite(dfr = users_followers.part, table.name = table.users_followers, db.name = db.name)
-                                                        })
-                                                } else{
-                                                        printf(paste0("can't get followers for ", followee$getScreenName(), ": ratelimit exceeeded? \n"))
-                                                        
-                                                }
-                                        })
-                                } else {
-                                        printf(paste0("\nRun ", x,  ": Getting users...  i >= ", i , ""))
-                                        #tuser <- getUser(users[[i]])
-                                        tusers <- lookupUsers(users[i:min(i+batchsize_userget, length(users))])
-                                        res <- lapply(tusers, function(tuser){
-                                                userinfo.part <- tuser$toDataFrame()
-                                                userinfo <<- rbind(userinfo, userinfo.part)
-                                                
-                                        })
-                                        #userinfo.part <- tuser$toDataFrame()
-                                        #userinfo <<- rbind(userinfo, userinfo.part)
-                                }
-                                
-                                }, error=function(e){warning(e); return("cannot get userdata from twitter API:")
-                                #ppy(userinfo.part)
-                        })
+x <- 1
+
+#for(k in seq(x, length(users), by=batchsize_userget )){
+for(k in seq(1, length(users), by=batchsize_userget )){
+        i <- k 
+        #k <- i + batchsize_userget
+        if(i <= length(users)){
+                tryCatch({
+                        printf(paste0(" ", i,"/",length(users),  ": " , users[[i]], "  "))
+                        rlim <-  getCurRateLimitInfo()
                         
-                }
-                setTxtProgressBar(pb, i)
-                Sys.sleep((15 * 60)/ratelimit_userget)
+                        if (table.type == "followers" & as.integer(rlim[rlim$resource == "/followers/ids", "remaining"]) > 0){
+                                printf(paste0("\nGetting followers...  "))
+                                #, retryOnRateLimit=9000
+                                followees <- lookupUsers(users[i:min(batchsize_userget, length(users))])
+                                #followees <- lookupUsers(users[1:10])
+                                #user$getFollowerIDs(n=1)
+                                printf(sapply(followees, "[[", "screenName"))
+                                tusers <- lapply(as.list(followees), function(user) {
+                                        list(followers = getFollowersList(user, nMax = 1000, retryOnRateLimit=10000),
+                                             username = user$getScreenName())
+                                })
+                                #tusers[[1]][["followers"]]
+                                # all follwers to single data frame
+
+                                res <- lapply(tusers, function(followee){
+                                        #screenName <- min(gsub("^(\\S+)(\\.).+(\\..+$)", "\\1", names(tuser), perl=TRUE))
+                                        #screenName <- followee$getScreenName()
+                                        screenName <- followee[["username"]]
+                                        printf(paste0(screenName, "\n"))
+                                        printf(paste0("\nlooking up followers: ",screenName))
+                                        if(is.character(screenName)){
+                                                printf(paste0("\n"))
+                                                lapply(followee[["followers"]], function(follower){
+                                                        userinfo.part <- twitteR::twListToDF(follower)
+                                                        userinfo <<- rbind(userinfo, userinfo.part)
+                                                        # add an entry to bridging table
+                                                        users_followers.part <- data.frame(userScreenName=rep(screenName, nrow(userinfo.part)), followerScreenName=userinfo.part$screenName)
+                                                        users_followers <<- rbind(users_followers, userinfo.part)
+                                                        #append2SQLite(dfr = users_followers.part, table.name = table.users_followers, db.name = db.name)
+                                                })
+                                        } else{
+                                                printf(paste0("can't get followers for ", followee$getScreenName(), ": ratelimit exceeeded? \n"))
+                                                
+                                        }
+                                })
+                        } else {
+                                printf(paste0("\nRun ", x,  ": Getting users...  i >= ", i , ""))
+                                #tuser <- getUser(users[[i]])
+                                tusers <- lookupUsers(users[i:min(i+batchsize_userget, length(users))])
+                                res <- lapply(tusers, function(tuser){
+                                        userinfo.part <- tuser$toDataFrame()
+                                        userinfo <<- rbind(userinfo, userinfo.part)
+                                        
+                                })
+                                #userinfo.part <- tuser$toDataFrame()
+                                #userinfo <<- rbind(userinfo, userinfo.part)
+                        }
+                        
+                        }, error=function(e){warning(e); return("cannot get userdata from twitter API:")
+                        #ppy(userinfo.part)
+                })
+                
         }
-#}
+        setTxtProgressBar(pb, i)
+        Sys.sleep((15 * 60)/ratelimit_userget)
+}
+
         
 timestamp()
 ratelimits()

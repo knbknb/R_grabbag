@@ -28,23 +28,23 @@ ratelimits()
 #
 # geocode:52.5226762,13.3790944,50mi
 #
-days_back <- 5
+days_back <- 1
 (date_back <- format(now() - days(days_back), "%Y-%m-%d"))
 days_until <- 0
 (date_until <- format(now() - days(days_until), "%Y-%m-%d"))
-(query.job <- paste0("#potsdam (#job OR #jobs OR #stellenangebot) -RT since:" , date_back, " until:",date_until))
+#(query.job <- paste0("#r (#job OR #jobs OR #stellenangebot) -RT since:" , date_back, " until:",date_until))
 
 #query.name <- "berlinjobs"1
-query.name <- "#rstats"
+query.name <- "#tatort"
 (query.job <- paste0(query.name, " -RT since:" , date_back, " until:",date_until))
-query.name.table <- paste0("qry_rstats")
+query.name.table <- paste0("qry_tatort")
 #
 #query <- paste0("#Potsdam -RT since:" , format(now() - days(days_back), "%Y%m%d"))
 tweets <- searchTwitter(query.job,n=2000)
 
 # store inside a database, 
 #db.name <- "tweets_jobsearch"
-db.name <- "tweets_allkindsof"
+db.name <- "db/tweets_allkindsof"
 db.name <- paste0(db.name, ".sqlite")
 register_sqlite_backend(db.name)
 store_tweets_db(tweets,table_name = query.name.table)
