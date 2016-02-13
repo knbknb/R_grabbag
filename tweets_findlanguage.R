@@ -43,7 +43,6 @@ tm_shown_meta(corpus = myCorpus.URLs.removed, ndoc=5, tag="author")
 tm_shown_meta(corpus = myCorpus.URLs.removed, ndoc=2, tag="retweetCount")
 tm_shown_content(corpus = myCorpus.URLs.removed, ndoc=2)
 
-
 myStopwords <- c(stopwords("english"), stopwords("german"), "rt", "@", "-", "via")
 #myCorpusCopy <- tm_map(myCorpus.URLs.removed, content_transformer(tm_removeStopwords), myStopwords)
 myCorpusCopy <- myCorpus.URLs.removed
@@ -106,8 +105,9 @@ myCorpusCopy2 <- tm_filter(myCorpusCopy, function(x){
         any(class(x) != "NULL")
 })
 myCorpusCopy2 <- tm_map(myCorpusCopy2, function(x){
-        try({
-                meta(x, tag="sentiment") <- getSentiment(annotateString(content(x)))$sentiment[1]
+        try({if(nchar(meta(x, tag="sentiment")) != 0){
+                        meta(x, tag="sentiment") <- getSentiment(annotateString(content(x)))$sentiment[1]
+                }
         })
         x
 })
@@ -139,11 +139,13 @@ tweets.df3 <- tweets.df %>%
         left_join(by="id", x=., y=tweets.df2)
 
 table.name.augmented <- paste0(table.name, "_augmented")
-addAugmentedTweetsTable(db.name = db.name, table.name = table.name.augmented, table.main.name = table.name)
+addAugmentedTweetsTableAndView(db.name = db.name, table.name = table.name.augmented, table.main.name = table.name)
 
-createView4AugmentedTweets(tweets.df2, db.name, table.name.augmented, table.name)
+insertIntoView4AugmentedTweets(tweets.df2, db.name, table.name.augmented, table.name)
 #makeTweetsTableUnique(db.name = db.name, table.name=table.name.augmented)
 
 makeTableUnique(db.name = db.name, table.name=table.name)
 makeTableUnique(db.name = db.name, table.name=table.name.augmented)
-makeTableUnique2(db.name = db.name, table.name=table.name)
+createViewThenRemoveDuplicateCount(db.name = db.name, table.name=table.name, colname="favoriteCount")
+createViewThenRemoveDuplicateCount(db.name = db.name, table.name=table.name, colname="retweetCount")
+
