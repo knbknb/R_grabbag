@@ -37,24 +37,26 @@ days_back <- 1
 (date_back <- format(now() - days(days_back), "%Y-%m-%d"))
 days_until <- 0
 (date_until <- format(now() - days(days_until), "%Y-%m-%d"))
-(query <- paste0("#wirhabenessatt -RT since:" , date_back, " until:",date_until))
+(query <- paste0("#MSC2016 -RT since:" , date_back, " until:",date_until))
         
-        query.name <- "qry_agrardemo"
-        tweets <- searchTwitter(query,n=2000)
-        # store inside a database, 
-        db.name <- paste0("db/tweets_allkindsof.sqlite")
-        register_sqlite_backend(db.name)
-        
-        #store one tweet to check if sqlite is available
-        is_stored <- store_tweets_db(tweets[1],table_name = query.name)
-        #is_stored <- FALSE
-        if (is_stored == TRUE){
-                is_stored2 <- store_tweets_db(tweets,table_name = query.name)
-                makeTweetsTableUnique(db.name = db.name, table.name=query.name)
-                tweets.df = load_tweets_db(as.data.frame = TRUE, table_name = query.name)
-        } else {
-                tweets.df <- unique(twitteR::twListToDF(tweets))
-        }
+query.name <- "qry_munsecconf"
+table.name <- query.name
+tweets <- searchTwitter(query,n=2000)
+# store inside a database, 
+db.name <- paste0("db/tweets_allkindsof.sqlite")
+register_sqlite_backend(db.name)
+
+#store one tweet to check if sqlite is available
+is_stored <- store_tweets_db(tweets[1],table_name = query.name)
+#is_stored <- FALSE
+if (is_stored == TRUE){
+        print(paste0("storing tweets in table ", table.name))
+        is_stored2 <- store_tweets_db(tweets,table_name = table.name)
+        makeTweetsTableUnique(db.name = db.name, table.name=table.name)
+        tweets.df = load_tweets_db(as.data.frame = TRUE, table_name = table.name)
+} else {
+        tweets.df <- unique(twitteR::twListToDF(tweets))
+}
 
 ###  create the corpus from a Dataframe of tweets
 ## simple way:
