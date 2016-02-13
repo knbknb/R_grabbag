@@ -14,3 +14,4 @@ nohup.out
 tweets_allkindsof.sqlite.bak
 tweets_allkindsof.sqlite.20160107.bak
 qry_code2015_userinfo_augmented
+db/*
