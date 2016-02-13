@@ -114,24 +114,28 @@ myCorpusCopy2 <- tm_map(myCorpusCopy2, function(x){
 
 
 content(myCorpusCopy2)
-meta(myCorpusCopy2[[3]])
-content(myCorpusCopy2[[9]])
+meta(myCorpusCopy2[[15]])
+content(myCorpusCopy2[[15]])
 #sapply(myCorpusCopy, function(x){       print(c(content(x),meta(x, tag="language"))) })
 tm_shown_meta(corpus = myCorpusCopy2, ndoc=15, tag="language")
 tm_shown_meta(corpus = myCorpusCopy2, ndoc=15, tag="sentiment")
 
 tm_shown_content(corpus = myCorpusCopy2, ndoc=20)
 
-tweets.df2 <- do.call(bind_rows, lapply(myCorpusCopy2, function(x){       
-        # print(c(content(x),meta(x, tag="language"))) 
-        list(id=as.character(meta(x, tag="description")), 
-             language=as.character(meta(x, tag="language")),
-             datetimestr=as.character(meta(x, tag="datetime")),
-             sentiment=as.character(meta(x, tag="sentiment"))
-        )
-}))
+suppressWarnings({
+        tweets.df2 <- do.call(bind_rows, lapply(myCorpusCopy2, function(x){       
+                # print(c(content(x),meta(x, tag="language")))
+                sent <- as.character(meta(x, tag="sentiment"))[1]
+                
+                data.frame(id=as.character(meta(x, tag="description")), 
+                     language=as.character(meta(x, tag="language")),
+                     datetimestr=as.character(meta(x, tag="datetime")),
+                     sentiment=ifelse(nchar(sent), sent, "?")
+                )
+        }))
+})
 
-tweets.df2 <- tweets.df %>%
+tweets.df3 <- tweets.df %>%
         left_join(by="id", x=., y=tweets.df2)
 
 table.name.augmented <- paste0(table.name, "_augmented")

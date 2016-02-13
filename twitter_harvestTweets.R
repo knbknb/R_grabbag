@@ -37,7 +37,7 @@ days_back <- 1
 (date_back <- format(now() - days(days_back), "%Y-%m-%d"))
 days_until <- 0
 (date_until <- format(now() - days(days_until), "%Y-%m-%d"))
-(query <- paste0("#MSC2016 -RT since:" , date_back, " until:",date_until))
+(query <- paste0("#MSC2016 OR @munsecconf  -RT since:" , date_back, " until:",date_until))
         
 query.name <- "qry_munsecconf"
 table.name <- query.name
