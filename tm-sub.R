@@ -1,0 +1,6 @@
+library(tm)
+data("crude")
+tdm <- TermDocumentMatrix(crude)
+dim(tdm)
+tdm.sp <- removeSparseTerms(tdm, 0.9)
+dim(tdm.sp)
