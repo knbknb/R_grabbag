@@ -48,6 +48,8 @@ library("RNetLogo")
 # Current setting assumes that NetLogo is installed
 # in the current working directory
 
+# todo: also adapt
+
 # knb 20170712
 curdir <- "/home/knb/code/svn/eclipse38_dynlang/R_one-offs/R_grabbag"
 #getwd()
