@@ -31,21 +31,24 @@ g2ppm <- 0.684
 # Lammert, A et al. (2013): Long-term eddy-covariance measurements from FINO2 platform
 # above the Baltic Sea (NetCDF format). doi:10.1594/PANGAEA.808714
 #
-zf <- "balticsea-data.tsv"
+zf       <- "balticsea-data.tsv"
 if(! file.exists(zf)){
         download("http://doi.pangaea.de/10.1594/PANGAEA.808714?format=textfile", zf)
 }
 
-con <- file(zf,open="r")
-lines <- readLines(con)
-skipn <- match("*/", lines) #gets the row index of the close comment
+con      <- file(zf,open="r")
+lines    <- readLines(con)
+skipn    <- match("*/", lines) #gets the row index of the close comment
 
 filelist <- read.tsv(zf, skip = skipn, stringsAsFactors = FALSE, header = TRUE )
 
-n <- 1
-i <- 1 # data from 2008
+n        <- nrow(filelist) # 29 - data from 2012
+i        <- 29 # 1  - data from 2008
+outdir   <- "netcdf-files"
+if(! dir.exists(outdir)){ system(sprintf("mkdir '%s'", outdir)) }
 for(i in 1:n){
-        netcdf.file <- filelist[i, "File.name"]
+        netcdf.file <- file.path(outdir, filelist[i, "File.name"])
+
         if(! file.exists(netcdf.file)){
                 download.file(url = filelist$URL.file[i], destfile = netcdf.file)
         }
@@ -60,16 +63,16 @@ close.nc(conn)
 
 co2_curve <- function(idx=1){
         co2 <- data.frame(day=fast_strptime(dat$isotime,  "%Y-%m-%dT%H:%M:%S"), co2=dat$CO2[idx,])
-        summary(co2)
-        colnames(co2)
+        # summary(co2)
+        # colnames(co2)
         co2$hour <- hour(co2$day)
         ggplot(co2, aes(x=day, y=co2*g2ppm * 1000)) +
                 geom_point(alpha=0.4) +
-                geom_line(alpha=0.4) +
+                geom_line( alpha=0.4) +
                 theme_tufte(base_family="Helvetica") +
                 geom_smooth(method="loess",se = FALSE) +
                 #facet_wrap(~hour) +
-                xlab("day in 2008") +
+                xlab("day in 2012") +
                 ylab("PPM CO2")
 }
 
@@ -142,17 +145,17 @@ ggplot(co2.sensor.data[co2.sensor.data$Param == "T [K] Air temperature from USAT
         labs(x=NULL, y=NULL)
 
 
-ggsave("multipage-2008-co2sensordata-balticsea.pdf", ml)
+ggsave("multipage-2008-co2sensordata-balticsea-v2.pdf", ml)
 
 # make complex plot matrix (xyplots, correlations)
 
-dat.slim2$isoday <- day(fast_strptime(as.character(dat.slim2$isotime),  "%Y-%m-%dT%H:%M:%S"))
-dat.slim3 <- dat.slim2
+dat.slim2$isoday       <- day(fast_strptime(as.character(dat.slim2$isotime),  "%Y-%m-%dT%H:%M:%S"))
+dat.slim3              <- dat.slim2
 dat.slim3[, "isotime"] <- NULL
-var_ <- colnames(dat.slim3[which(grepl("var_", colnames(dat.slim3)))])
-mycolumns <- setdiff(colnames(dat.slim3), c("dd", "u", "v", "w", var_))
+var_                   <- colnames(dat.slim3[which(grepl("var_", colnames(dat.slim3)))])
+mycolumns              <- setdiff(colnames(dat.slim3), c("dd", "u", "v", "w", var_))
 
-mycolumns.ok <- make.names(mycolumns)
+mycolumns.ok           <- make.names(mycolumns)
 colnames(dat.slim3)[which(colnames(dat.slim3) %in% mycolumns)] <- mycolumns.ok
 ggpairs(dat.slim3[, mycolumns.ok[6:8]], size=0.1)
 
