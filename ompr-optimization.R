@@ -28,14 +28,14 @@ mydf <- read.table(text = "Mean_1     Mean_2        Nb_element_1     Nb_element_
                 filter(Concol2 == TRUE & Concol3 == TRUE) %>%
                 filter(Concol1 == min(Concol1)))
 
-# does not work
+# does not work when MIPModel does not contain anything
 result <- MIPModel() %>%
         add_variable(Mean_1, type = "continuous") %>%
         add_variable(Mean_2, type = "continuous") %>%
         add_variable(Nb_element_1, type = "continuous") %>%
         add_variable(Nb_element_2, type = "continuous") %>%
-#        set_bounds(x, lb = 0) %>%
-        set_objective(, "min") %>%
+        set_bounds(x, lb = 0) %>%
+        set_objective(x, "min") %>%
         add_constraint(1.1 * abs(Mean_1) - abs(Mean_2) >= 0) %>%
         add_constraint( abs(Mean_2) - 0.75* abs(Mean_1) >= 0 ) %>%
         set_bounds(Mean_1, ub = 42.6667, lb = 42.6667) %>%
