@@ -1,7 +1,7 @@
 #library(devtools)
-devtools::install_github("R-Lum/Luminescence@master")
+if(!require("Luminescence")) devtools::install_github("R-Lum/Luminescence@master")
 library(Luminescence)
-help("Luminescence")
+#help("Luminescence")
 
 #http://forum.r-luminescence.de
 ## load example data and recalculate to Gray
