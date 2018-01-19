@@ -9,29 +9,32 @@ data <- data %>%
 # rename some columns
 names(data) <- gsub("\\s+", "_", names(data))
 data <- data %>%
-        mutate(ROCK_NAME = str_trim(str_replace_all(ROCK_NAME, "\\[8520\\]", "")),
-               SAMPLE_NAME = str_trim(str_replace_all(SAMPLE_NAME, "\\[8520\\]", "")),
-               MATERIAL = str_trim(str_replace_all(MATERIAL, "\\[8520\\]", "")),
-               GEOL_AGE = str_trim(str_replace_all(GEOL_AGE, "\\[8520\\]", "")),
-               ROCK_NAME = str_replace_all(ROCK_NAME, "\\[\\d+\\]", ""),
-               UNIQUE_ID = as.factor(UNIQUE_ID),
-               MATERIAL = as.factor(MATERIAL),
-               ROCK_TYPE = as.factor(ROCK_TYPE),
-               ROCK_NAME = as.factor(ROCK_NAME),
-               SAMPLE_NAME = as.factor(SAMPLE_NAME),
-               LAND_OR_SEA = as.factor(LAND_OR_SEA),
-               TECTONIC_SETTING = as.factor(TECTONIC_SETTING),
-               GEOL_AGE = as.factor(GEOL_AGE))
+  mutate(
+    ROCK_NAME        = str_trim(str_replace_all(ROCK_NAME, "\\[8520\\]", "")),
+    SAMPLE_NAME      = str_trim(str_replace_all(SAMPLE_NAME, "\\[8520\\]", "")),
+    MATERIAL         = str_trim(str_replace_all(MATERIAL, "\\[8520\\]", "")),
+    GEOL_AGE         = str_trim(str_replace_all(GEOL_AGE, "\\[8520\\]", "")),
+    ROCK_NAME        = str_replace_all(ROCK_NAME, "\\[\\d+\\]", ""),
+    UNIQUE_ID        = as.factor(UNIQUE_ID),
+    MATERIAL         = as.factor(MATERIAL),
+    ROCK_TYPE        = as.factor(ROCK_TYPE),
+    ROCK_NAME        = as.factor(ROCK_NAME),
+    SAMPLE_NAME      = as.factor(SAMPLE_NAME),
+    LAND_OR_SEA      = as.factor(LAND_OR_SEA),
+    TECTONIC_SETTING = as.factor(TECTONIC_SETTING),
+    GEOL_AGE         = as.factor(GEOL_AGE)
+  )
 
-wtpct_idx <- str_detect(names(data), "WT")
-#wtpct_idx <- c(1:14,23,24)
-wtpct_vals <- names(data)[wtpct_idx]
-wtpct_vals_pretty <- wtpct_vals %>%  gsub(x = ., "^(.)([A-Z])", "\\1\\L\\2", perl=TRUE)
+wtpct_idx              <- str_detect(names(data), "WT")
+# wtpct_idx            <- c(1:14,23,24)
+wtpct_vals             <- names(data)[wtpct_idx]
+wtpct_vals_pretty      <- wtpct_vals %>% gsub(x = ., "^(.)([A-Z])", "\\1\\L\\2", perl = TRUE)
 names(data)[wtpct_idx] <- wtpct_vals_pretty
 
-ppm_idx <- str_detect(names(data), "PPM")
-ppm_vals <- names(data)[ppm_idx]
+ppm_idx         <- str_detect(names(data), "PPM")
+ppm_vals        <- names(data)[ppm_idx]
 ppm_vals_pretty <- ppm_vals %>% tolower() %>% gsub(x = ., "^([a-z])", "\\U\\1", perl=TRUE)
+
 names(data)[ppm_idx] <- ppm_vals_pretty
 
 # used to buld the -exclusion list in gather() call below
@@ -57,7 +60,7 @@ data_tidy <- data %>% gather(
   -UNIQUE_ID
 )
 
-data_tidy2 <- data_tidy %>% mutate(v = as.numeric(v), k=as.factor(k))
+data_tidy2 <- data_tidy %>% mutate(v = as.numeric(v), k = as.factor(k))
 summary(data_tidy2)
 
 data_tidy_wtpct <- data_tidy2 %>%
@@ -72,8 +75,7 @@ data_tidy_wtpct_sub <- data_tidy_wtpct %>%
         na.omit()
 
 
-ggplot(data_tidy_wtpct_sub, aes(k, y=v, group=ROCK_NAME, color=ROCK_NAME)) +
-        geom_boxplot() +
-        theme(legend.position = "top") +
-        facet_wrap(~k, nrow = 3, scales = "free")
-
+ggplot(data_tidy_wtpct_sub, aes(k, y = v, group = ROCK_NAME, color = ROCK_NAME)) +
+  geom_boxplot() +
+  theme(legend.position = "top") +
+  facet_wrap(~k, nrow = 3, scales = "free")
