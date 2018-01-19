@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .Rproj.user
 .Rhistory
 .RData
@@ -11,3 +12,22 @@
 *.nc
 *.json
 *.html
+=======
+.httr-oauth
+.Rproj
+.Rproj.user
+*.RData
+*.txt
+*.png
+*sqlite
+*filehash
+pdfs-output/*
+plots-output/*
+twusers
+tweets_jobsearch_hamburgjobs_sqlite
+nohup.out
+tweets_allkindsof.sqlite.bak
+tweets_allkindsof.sqlite.20160107.bak
+qry_code2015_userinfo_augmented
+db/*
+>>>>>>> a8c018473c259baeda74cca4f471956c74e840e4
